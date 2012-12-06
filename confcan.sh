@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-
+################################################################################
+# ConfCan - Monitors changes of a directory and triggers an action
+# 
+# Author:  Dominik D. Geyer <dominik.geyer@gmail.com>
+# License: GPLv3 (see LICENSE)
+# Version: $VERSION$
+################################################################################
 set -e
 
 INW=inotifywait
