@@ -2,7 +2,11 @@
 
 set -e
 
+INW=inotifywait
 INW_EVENTS="create,close_write,moved_to,move_self,delete"
+
+GIT=git
+
 TIMEOUT=5
 
 ###############################
@@ -12,13 +16,16 @@ msg () {
 }
 
 git_trigger () {
-	if ! git add .; then
+	# stage all changed/new/deleted files
+	if ! $GIT add .; then
 		msg "WARN: git add failed"
 		return 1
 	fi
 	
-	if [[ -n "$(git status --porcelain)" ]]; then
-		if ! git commit -a -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
+	# are there any changes?
+	if [[ -n "$($GIT status --porcelain)" ]]; then
+		# commit changes (use -a in case something changed since `git add`
+		if ! $GIT commit -a -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
 			msg "WARN: git commit failed"
 			return 2
 		fi
@@ -54,8 +61,8 @@ cd "$REPO_DIR" || { msg "Error: Cannot change into repository directory."; exit 
 
 ###############################
 
-PID=$$
-SLEEP_PID=		# invalid pid
+PID=$$			# this script's PID
+SLEEP_PID=      # timeout process's PID
 
 trap "cleanup" EXIT
 trap "usr_timeout" SIGUSR1
@@ -72,8 +79,10 @@ while read -r line; do
 	# timeout subshell
 	(
 		sleep $TIMEOUT
-		kill -SIGUSR1 $PID || msg "WARN: Error sending USR1 to $PID"
+		
+		# send signal USR1 to parent
+		kill -SIGUSR1 $PID || msg "WARN: Error sending signal USR1 to $PID"
 	) &
 	SLEEP_PID=$!
-done < <(inotifywait -m -r -e $INW_EVENTS "$REPO_DIR" "@${REPO_DIR}/.git" 2>/dev/null)
+done < <($INW -m -r -e $INW_EVENTS "$REPO_DIR" "@${REPO_DIR}/.git" 2>/dev/null)
 
