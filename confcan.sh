@@ -71,12 +71,14 @@ while read -r line; do
 	((++a))
 	echo "NOTIFY $(printf '%05d' $a): ${line/$REPO_DIR/GIT_REPO}"
 	
+	# is there already a timeout process running?
 	if [[ -n "$SLEEP_PID" ]] && kill -0 $SLEEP_PID &>/dev/null; then
+		# kill it and wait for completion
 		kill $SLEEP_PID &>/dev/null || true
 		wait $SLEEP_PID &>/dev/null || true
 	fi
 	
-	# timeout subshell
+	# start timeout process
 	(
 		sleep $TIMEOUT
 		
