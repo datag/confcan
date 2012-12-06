@@ -117,8 +117,8 @@ trap "cleanup" EXIT
 trap "usr_timeout" SIGUSR1
 
 while read -r line; do
-	((++a))
-	info "NOTIFY $(printf '%05d' $a): ${line/$REPO_DIR/GIT_REPO}"
+	((++evcount))
+	info "NOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
 	
 	# is there already a timeout process running?
 	if [[ -n "$SLEEP_PID" ]] && kill -0 $SLEEP_PID &>/dev/null; then
