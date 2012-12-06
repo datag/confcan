@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ################################################################################
-# ConfCan - Monitors changes of a directory and triggers an action
+# ConfCan - Monitors file changes within a directory and triggers actions.
 # 
 # Author:  Dominik D. Geyer <dominik.geyer@gmail.com>
 # License: GPLv3 (see LICENSE)
