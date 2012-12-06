@@ -104,18 +104,25 @@ if [[ $# != 1 ]]; then
     exit 1
 fi
 
+# determine realpath of repository, as inotifywait seems not to deal with symlinks
 REPO_DIR=$(readlink -f "$1") || { msg "Error: Repository does not exist."; exit 1; }
-[[ ! -d "$REPO_DIR" ]] && { msg "Error: The repository is not a directory."; exit 1; }
+
+# sanity check: is this a git repository?
+[[ -d "$REPO_DIR/.git" ]] || { msg "Error: The repository is not a Git repository."; exit 1; }
+
+# chdir into repositoy, as git wants to operate within it's repository
 cd "$REPO_DIR" || { msg "Error: Cannot change into repository directory."; exit 1; }
 
-###############################
+################################################################################
 
 PID=$$			# this script's PID
 SLEEP_PID=      # timeout process's PID
 
+# install signal handlers
 trap "cleanup" EXIT
 trap "usr_timeout" SIGUSR1
 
+# for each requested inotify event
 while read -r line; do
 	((++evcount))
 	info "NOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
