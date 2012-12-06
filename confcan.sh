@@ -27,11 +27,11 @@ usage () {
 	EOT
 }
 
-msg () {
+cmsg () {
 	echo "$@" >&2
 }
 
-info () {
+cinfo () {
 	(( VERBOSITY < 1 )) && return
 	echo "$@" >&2
 }
@@ -39,7 +39,7 @@ info () {
 git_trigger () {
 	# stage all changed/new/deleted files
 	if ! $GIT add .; then
-		msg "WARN: git add failed"
+		cmsg "Warning: git add failed"
 		return 1
 	fi
 	
@@ -47,24 +47,24 @@ git_trigger () {
 	if [[ -n "$($GIT status --porcelain)" ]]; then
 		# commit changes (use -a in case something changed since `git add`
 		if ! $GIT commit -a -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
-			msg "WARN: git commit failed"
+			cmsg "Warning: git commit failed"
 			return 2
 		fi
 	else
-		msg "Nothing to do... skipping commit!"
+		cinfo "Notice: Nothing to do... skipping commit!"
 	fi
 }
 
 cleanup () {
 	if [[ -n "$SLEEP_PID" ]] && kill -0 $SLEEP_PID &>/dev/null; then
-		msg "CLEANUP: killing $SLEEP_PID"
+		cinfo "$FUNCNAME: killing timeout process $SLEEP_PID"
 		kill $SLEEP_PID &>/dev/null
 	fi
-	exit 0
+	exit 0	# we need to exit here!
 }
 
 usr_timeout () {
-	git_trigger || msg "... something went wrong with git_trigger()"
+	git_trigger || cmsg "Warning: Smething went wrong with git_trigger()"
 	
 	return 0
 }
@@ -84,12 +84,12 @@ while getopts ":vh" opt; do
 		exit 0
 		;;
 	\?)
-		msg "Error: Invalid option -$OPTARG"
+		cmsg "Error: Invalid option -$OPTARG"
 		usage >&2
 		exit 1
 		;;
 	:)
-		msg "Error: Option -$OPTARG requires an argument"
+		cmsg "Error: Option -$OPTARG requires an argument"
 		usage >&2
 		exit 1
 		;;
@@ -105,13 +105,13 @@ if [[ $# != 1 ]]; then
 fi
 
 # determine realpath of repository, as inotifywait seems not to deal with symlinks
-REPO_DIR=$(readlink -f "$1") || { msg "Error: Repository does not exist."; exit 1; }
+REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Repository does not exist."; exit 1; }
 
 # sanity check: is this a git repository?
-[[ -d "$REPO_DIR/.git" ]] || { msg "Error: The repository is not a Git repository."; exit 1; }
+[[ -d "$REPO_DIR/.git" ]] || { cmsg "Error: The repository is not a Git repository."; exit 1; }
 
 # chdir into repositoy, as git wants to operate within it's repository
-cd "$REPO_DIR" || { msg "Error: Cannot change into repository directory."; exit 1; }
+cd "$REPO_DIR" || { cmsg "Error: Cannot change into repository directory."; exit 1; }
 
 ################################################################################
 
@@ -125,9 +125,9 @@ trap "usr_timeout" SIGUSR1
 # for each requested inotify event
 while read -r line; do
 	((++evcount))
-	info "NOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
+	cinfo "NOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
 	
-	# is there already a timeout process running?
+	# are we already waiting to trigger an action? defer it and wait again!
 	if [[ -n "$SLEEP_PID" ]] && kill -0 $SLEEP_PID &>/dev/null; then
 		# kill it and wait for completion
 		kill $SLEEP_PID &>/dev/null || true
@@ -136,10 +136,11 @@ while read -r line; do
 	
 	# start timeout process
 	(
+		# take a nap
 		sleep $TIMEOUT
 		
 		# send signal USR1 to parent
-		kill -SIGUSR1 $PID || msg "WARN: Error sending signal USR1 to $PID"
+		kill -SIGUSR1 $PID || cmsg "WARN: Error sending signal USR1 to $PID"
 	) &
 	SLEEP_PID=$!
 done < <($INW -m -r -e $INW_EVENTS "$REPO_DIR" "@${REPO_DIR}/.git" 2>/dev/null)
