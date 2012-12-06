@@ -15,9 +15,24 @@ GIT=git
 
 TIMEOUT=5
 
-###############################
+################################################################################
+
+usage () {
+	cat <<-EOT
+		Usage: ${0##*/} [OPTION]... <git-repository>
+		
+		Options:
+		    -v	Be verbose (given multiple times increases verbosity level)
+
+	EOT
+}
 
 msg () {
+	echo "$@" >&2
+}
+
+info () {
+	(( VERBOSITY < 1 )) && return
 	echo "$@" >&2
 }
 
@@ -54,11 +69,39 @@ usr_timeout () {
 	return 0
 }
 
-###############################
+################################################################################
+
+declare -i VERBOSITY=0
+
+while getopts ":vh" opt; do
+	case $opt in
+	# be verbose; each -v increases the verbosity level
+	v)
+		VERBOSITY=$((VERBOSITY + 1))
+		;;
+	h)
+		usage >&2
+		exit 0
+		;;
+	\?)
+		msg "Error: Invalid option -$OPTARG"
+		usage >&2
+		exit 1
+		;;
+	:)
+		msg "Error: Option -$OPTARG requires an argument"
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+shift $((OPTIND-1))		# shift options
+unset opt OPTIND		# unset variables used for option parsing
 
 if [[ $# != 1 ]]; then
-    echo "Usage..." >&2
-    exit
+    usage >&2
+    exit 1
 fi
 
 REPO_DIR=$(readlink -f "$1") || { msg "Error: Repository does not exist."; exit 1; }
@@ -75,7 +118,7 @@ trap "usr_timeout" SIGUSR1
 
 while read -r line; do
 	((++a))
-	echo "NOTIFY $(printf '%05d' $a): ${line/$REPO_DIR/GIT_REPO}"
+	info "NOTIFY $(printf '%05d' $a): ${line/$REPO_DIR/GIT_REPO}"
 	
 	# is there already a timeout process running?
 	if [[ -n "$SLEEP_PID" ]] && kill -0 $SLEEP_PID &>/dev/null; then
