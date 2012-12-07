@@ -44,8 +44,8 @@ git_trigger () {
 	
 	# are there any changes?
 	if [[ -n "$($GIT status --porcelain)" ]]; then
-		# commit changes (use -a in case something changed since `git add`
-		if ! $GIT commit -a -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
+		# commit staged changes
+		if ! $GIT commit -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
 			cmsg "Warning: git commit failed"
 			return 2
 		fi
