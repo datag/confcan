@@ -2,9 +2,8 @@
 ################################################################################
 # ConfCan - Monitors file changes within a directory and triggers actions.
 # 
-# Author:  Dominik D. Geyer <dominik.geyer@gmail.com>
-# License: GPLv3 (see LICENSE)
-# Version: $VERSION$
+# Copyright 2012  Dominik D. Geyer <dominik.geyer@gmail.com>
+# License: GPLv3 (see file LICENSE)
 ################################################################################
 set -e
 
@@ -112,7 +111,7 @@ while getopts ":vt:a:ih" opt; do
 	t)
 		TIMEOUT=$OPTARG
 		;;
-	# directories to be watched by inotigy and provided to 'git add'
+	# directories to be watched by inotify and provided to 'git add'
 	a)
 		GIT_ADD_DIRS+=( "$OPTARG" )
 		;;
