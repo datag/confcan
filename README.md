@@ -9,7 +9,7 @@ trigger the configured action. While the timeout task is running, subsequent
 inotify events cause the timeout to be reset. This is done in order to wait for 
 heavy I/O (e.g. copying large directory) to complete and avoid scattering commits.
 
-Please note that which this approach **not every** file change may be versioned.
+Please note that with this approach **not every** file change may be versioned.
 
 
 ## General usage
@@ -36,7 +36,8 @@ See the `LICENSE` file in root of the repository.
 
 * General:
   * Logging support
-  * Make every hard-coded value configurable (e.g. timeout)
+  * Config file support
+  * Be more generic: Allow any (configurable/includable) action, not just a git commit
 * inotifywait-specific:
   * Use custom output format of inotifywait
   * Configurable pattern for ignoring files/directories

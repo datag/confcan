@@ -13,8 +13,6 @@ INW_EVENTS="create,close_write,moved_to,move_self,delete"
 
 GIT=git
 
-TIMEOUT=5
-
 ################################################################################
 
 usage () {
@@ -22,6 +20,7 @@ usage () {
 		Usage: ${0##*/} [OPTION]... <git-repository>
 		
 		Options:
+		    -t	Timeout in seconds before action is triggered (Default: 5)
 		    -v	Be verbose (given multiple times increases verbosity level)
 
 	EOT
@@ -95,10 +94,15 @@ timeout_task_stop () {
 
 ################################################################################
 
+declare -i TIMEOUT=5
 declare -i VERBOSITY=0
 
-while getopts ":vh" opt; do
+while getopts ":vt:h" opt; do
 	case $opt in
+	# timeout in seconds for timeout task
+	t)
+		TIMEOUT=$OPTARG
+		;;
 	# be verbose; each -v increases the verbosity level
 	v)
 		VERBOSITY=$((VERBOSITY + 1))
