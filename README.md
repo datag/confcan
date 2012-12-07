@@ -14,12 +14,30 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-FIXME
+    Usage: confcan.sh [OPTION]... <git-repository>
+    
+    Options:
+        -t	Timeout in seconds before action is triggered (Default: 5)
+        -v	Be verbose (given multiple times increases verbosity level)
+
+
+## Examples
+
+### Record both user and system changes to system configuration (directory /etc)
+
+    # cd /etc     # chdir into /etc
+    # git init    # initialize empty git repository
+    # git add .   # initially add all files
+    # git commit -m 'Initial state of /etc'   # commit original state
+    # confcan.sh -v /etc   # let ConfCan monitor the changes
+    ... system update, manual changes, ...
+    ^C   # end ConfCan monitoring
+    # git diff 193f49d18..HEAD    # review changes (193f49d18 is the hash of the initial commit here)
 
 
 ## Known bugs
 
-* Copying another git-repository into watched repository gives strange effects (submodule; circular locking?)
+* Copying another git-repository into watched repository might give strange effects (submodule; circular locking?)
 
 
 ## Thanks to
