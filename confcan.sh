@@ -17,12 +17,16 @@ GIT=git
 
 usage () {
 	cat <<-EOT
-		Usage: ${0##*/} [OPTION]... <git-repository>
+		Usage: ${0##*/} [OPTION...] <git-repository>
 		
 		Options:
-		    -t	Timeout in seconds before action is triggered (Default: 5)
-		    -v	Be verbose (given multiple times increases verbosity level)
-
+		    -t <timeout>
+		        Timeout in seconds before action is triggered (Default: 5)
+		    -a <directory>
+		        Directory (relative) watched by inotifywait and provided to 'git add'
+		        (can be specified multiple times; Default: .)
+		    -v
+		        Be verbose (given multiple times increases verbosity level)
 	EOT
 }
 
@@ -37,13 +41,13 @@ cinfo () {
 
 git_trigger () {
 	# stage all changed/new/deleted files
-	if ! $GIT add .; then
+	if ! $GIT add -- "${GIT_ADD_DIRS[@]}"; then
 		cmsg "Warning: git add failed"
 		return 1
 	fi
 	
 	# are there any changes?
-	if [[ -n "$($GIT status --porcelain)" ]]; then
+	if [[ -n "$($GIT status --porcelain -- "${GIT_ADD_DIRS[@]}")" ]]; then
 		# commit staged changes
 		if ! $GIT commit -m "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
 			cmsg "Warning: git commit failed"
@@ -95,13 +99,18 @@ timeout_task_stop () {
 ################################################################################
 
 declare -i TIMEOUT=5
+declare -a GIT_ADD_DIRS
 declare -i VERBOSITY=0
 
-while getopts ":vt:h" opt; do
+while getopts ":vt:a:h" opt; do
 	case $opt in
 	# timeout in seconds for timeout task
 	t)
 		TIMEOUT=$OPTARG
+		;;
+	# directories to be watched by inotigy and provided to 'git add'
+	a)
+		GIT_ADD_DIRS+=( "$OPTARG" )
 		;;
 	# be verbose; each -v increases the verbosity level
 	v)
@@ -141,6 +150,20 @@ REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Repository does not exist."; exit
 # chdir into repository, as git used to operate within its repository
 cd "$REPO_DIR" || { cmsg "Error: Cannot change into repository directory."; exit 1; }
 
+
+# selective directory watches
+if (( ${#GIT_ADD_DIRS[@]} == 0 )); then
+	GIT_ADD_DIRS=( "." )	# whole repository as default
+fi
+
+declare -a INW_DIRS
+for d in "${GIT_ADD_DIRS[@]}"; do
+	d="$REPO_DIR/$d"
+	[[ -d "$d" ]] || { cmsg "Error: Directory '$d' does not exist."; exit 1; }
+	INW_DIRS+=( "$d" )
+done
+unset d
+
 ################################################################################
 
 TIMEOUT_PID=	# timeout process's PID
@@ -161,5 +184,5 @@ while read -r line; do
 	# run timeout task as background process and get its PID
 	timeout_task $$ $TIMEOUT &
 	TIMEOUT_PID=$!
-done < <($INW -m -r -e $INW_EVENTS "$REPO_DIR" "@${REPO_DIR}/.git" 2>/dev/null)
+done < <($INW -m -r -e $INW_EVENTS "${INW_DIRS[@]}" "@${REPO_DIR}/.git" 2>/dev/null)
 

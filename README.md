@@ -14,11 +14,16 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-    Usage: confcan.sh [OPTION]... <git-repository>
+    Usage: confcan.sh [OPTION...] <git-repository>
     
     Options:
-        -t	Timeout in seconds before action is triggered (Default: 5)
-        -v	Be verbose (given multiple times increases verbosity level)
+            -t <timeout>
+                Timeout in seconds before action is triggered (Default: 5)
+            -a <directory>
+                Directory (relative) watched by inotifywait and provided to 'git add'
+                (can be specified multiple times; Default: .)
+            -v
+                Be verbose (given multiple times increases verbosity level)
 
 
 ## Examples
@@ -33,6 +38,12 @@ Please note that with this approach **not every** file change may be versioned.
     ... system update, manual changes, ...
     ^C   # end ConfCan monitoring
     # git diff 193f49d18..HEAD    # review changes (193f49d18 is the hash of the initial commit here)
+
+### Selective directory monitoring
+
+    $ confcan.sh -v -a 'watch_me' -a 'another dir' ~/my_repo &
+    $ touch ~/my_repo/foo           # nothing happens because there is no watch
+    $ touch ~/my_repo/watch_me/bar  # change is detected and will be committed
 
 
 ## Known bugs
@@ -55,6 +66,7 @@ See the `LICENSE` file in root of the repository.
 * General:
   * Logging support
   * Config file support
+  * Automatically init Git repository (and maybe even watched directories)
   * Be more generic: Allow any (configurable/includable) action, not just a git commit
 * inotifywait-specific:
   * Use custom output format of inotifywait
