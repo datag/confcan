@@ -143,7 +143,6 @@ cd "$REPO_DIR" || { cmsg "Error: Cannot change into repository directory."; exit
 
 ################################################################################
 
-PID=$$			# this script's PID
 TIMEOUT_PID=	# timeout process's PID
 
 # install signal handlers
@@ -160,7 +159,7 @@ while read -r line; do
 	timeout_task_stop $TIMEOUT_PID
 	
 	# run timeout task as background process and get its PID
-	timeout_task $PID $TIMEOUT &
+	timeout_task $$ $TIMEOUT &
 	TIMEOUT_PID=$!
 done < <($INW -m -r -e $INW_EVENTS "$REPO_DIR" "@${REPO_DIR}/.git" 2>/dev/null)
 
