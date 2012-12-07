@@ -128,19 +128,19 @@ if [[ $# != 1 ]]; then
     exit 1
 fi
 
-# determine realpath of repository, as inotifywait seems not to deal with symlinks
+# determine canonical path of repository, as inotifywait seems not to deal with symlinks
 REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Repository does not exist."; exit 1; }
 
 # sanity check: is this a git repository?
 [[ -d "$REPO_DIR/.git" ]] || { cmsg "Error: The repository is not a Git repository."; exit 1; }
 
-# chdir into repositoy, as git wants to operate within it's repository
+# chdir into repository, as git used to operate within its repository
 cd "$REPO_DIR" || { cmsg "Error: Cannot change into repository directory."; exit 1; }
 
 ################################################################################
 
 PID=$$			# this script's PID
-TIMEOUT_PID=      # timeout process's PID
+TIMEOUT_PID=	# timeout process's PID
 
 # install signal handlers
 trap "cleanup" EXIT
@@ -150,9 +150,9 @@ trap "usr_timeout" SIGUSR1
 while read -r line; do
 	# new inotify event occured
 	((++evcount))
-	cinfo "NOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
+	cinfo "INOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
 	
-	# are we already waiting to trigger an action? defer action and start timeout over again!
+	# defer action and restart timeout if timeout task is already runnning
 	timeout_task_stop $TIMEOUT_PID
 	
 	# run timeout task as background process and get its PID
