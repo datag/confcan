@@ -25,6 +25,9 @@ usage () {
 		    -a <directory>
 		        Directory (relative) watched by inotifywait and provided to 'git add'
 		        (can be specified multiple times; Default: .)
+		    -i
+		        Initialize Git repository and creates directories specified by '-a'
+		        (base directory must exist)
 		    -v
 		        Be verbose (given multiple times increases verbosity level)
 	EOT
@@ -100,9 +103,10 @@ timeout_task_stop () {
 
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
+declare GIT_INIT
 declare -i VERBOSITY=0
 
-while getopts ":vt:a:h" opt; do
+while getopts ":vt:a:ih" opt; do
 	case $opt in
 	# timeout in seconds for timeout task
 	t)
@@ -111,6 +115,10 @@ while getopts ":vt:a:h" opt; do
 	# directories to be watched by inotigy and provided to 'git add'
 	a)
 		GIT_ADD_DIRS+=( "$OPTARG" )
+		;;
+	# initialize Git repository
+	i)
+		GIT_INIT=1
 		;;
 	# be verbose; each -v increases the verbosity level
 	v)
@@ -141,11 +149,27 @@ if [[ $# != 1 ]]; then
     exit 1
 fi
 
-# determine canonical path of repository, as inotifywait seems not to deal with symlinks
-REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Repository does not exist."; exit 1; }
 
-# sanity check: is this a git repository?
-[[ -d "$REPO_DIR/.git" ]] || { cmsg "Error: The repository is not a Git repository."; exit 1; }
+# determine canonical path of repository, as inotifywait seems not to deal with symlinks
+REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Base directory does not exist."; exit 1; }
+
+if [[ -z "$GIT_INIT" ]]; then
+	# sanity check: is this a git repository?
+	[[ -d "$REPO_DIR/.git" ]] || { cmsg "Error: Directory '$REPO_DIR' is not a Git repository."; exit 1; }
+else
+	# initialize Git repository if requested by option '-i'
+	cinfo "Initializing Git repository '$REPO_DIR'."
+	$GIT init "$REPO_DIR" &>/dev/null || { cmsg "Error: Could not initialize Git repository '$REPO_DIR'."; exit 1; }
+	
+	for d in "${GIT_ADD_DIRS[@]}"; do
+		d="$REPO_DIR/$d"
+		if [[ ! -d "$d" ]]; then
+			cinfo "Creating directory '$d'."
+			mkdir -p "$d" || { cmsg "Error: Could not create directory '$d'."; exit 1; }
+		fi
+	done
+	unset d
+fi
 
 # chdir into repository, as git used to operate within its repository
 cd "$REPO_DIR" || { cmsg "Error: Cannot change into repository directory."; exit 1; }
@@ -160,7 +184,7 @@ declare -a INW_DIRS
 for d in "${GIT_ADD_DIRS[@]}"; do
 	d="$REPO_DIR/$d"
 	[[ -d "$d" ]] || { cmsg "Error: Directory '$d' does not exist."; exit 1; }
-	INW_DIRS+=( "$d" )
+	INW_DIRS+=( "$(readlink -f "$d")" )
 done
 unset d
 

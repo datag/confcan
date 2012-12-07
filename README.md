@@ -22,6 +22,9 @@ Please note that with this approach **not every** file change may be versioned.
             -a <directory>
                 Directory (relative) watched by inotifywait and provided to 'git add'
                 (can be specified multiple times; Default: .)
+            -i
+                Initialize Git repository and creates directories specified by '-a'
+                (base directory must exist)
             -v
                 Be verbose (given multiple times increases verbosity level)
 
@@ -66,11 +69,10 @@ See the `LICENSE` file in root of the repository.
 * General:
   * Logging support
   * Config file support
-  * Automatically init Git repository (and maybe even watched directories)
-  * Be more generic: Allow any (configurable/includable) action, not just a git commit
 * inotifywait-specific:
   * Use custom output format of inotifywait
   * Configurable pattern for ignoring files/directories
+  * Use $INW_IGNORE variable
 * Git-specific:
   * Metadata (file attribute) logging support
   * Auto-tagging by writing "magic" file (e.g. `touch TAG_config-test-1`)
