@@ -43,7 +43,7 @@ cinfo () {
 
 git_trigger () {
 	# stage all changed/new/deleted files
-	if ! $GIT add -- "${GIT_ADD_DIRS[@]}"; then
+	if ! $GIT add --all -- "${GIT_ADD_DIRS[@]}"; then
 		cmsg "Warning: git add failed"
 		return 1
 	fi
