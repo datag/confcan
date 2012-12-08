@@ -59,7 +59,7 @@ git_trigger () {
 	# are there any changes?
 	if [[ -n "$($GIT status --porcelain -- "${GIT_ADD_DIRS[@]}")" ]]; then
 		# commit staged changes
-		if ! $GIT commit --message "Auto commit $(date +'%Y-%m-%d %H:%M:%S')" -- "${GIT_ADD_DIRS[@]}"; then
+		if ! $GIT commit --message "Auto commit $(date +'%Y-%m-%d %H:%M:%S')"; then
 			cmsg "Warning: git commit failed."
 			return 2
 		fi
