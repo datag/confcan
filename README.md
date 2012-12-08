@@ -14,7 +14,7 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-	Usage: confcan.sh [OPTION...] <git-repository>
+	Usage: confcan.sh [OPTION...] <git-repository | git-dir>
 
 	Options:
 		-t <timeout>      (Default: 5)
@@ -30,6 +30,8 @@ Please note that with this approach **not every** file change may be versioned.
 		    The base directory must exist.
 		-c
 		    Stage and commit all changes before monitoring.
+		-g <git-dir>     (Default: auto-detect)
+		    Override $GIT_DIR.
 		-e <events>       (Default: create,close_write,moved_to,move_self,delete)
 		    Comma separated list of events 'inotifywait' should listen to.
 		    See man page of 'inotifywait' for available events.
@@ -61,6 +63,11 @@ Please note that with this approach **not every** file change may be versioned.
 ### Initialize Git repository at `/` and stage, commit and watch `/etc` and `/var/lib/portage`
 
     # confcan.sh -v -i -c -w etc -w var/lib/portage /
+
+### Different location for `GIT_DIR`
+
+    # confcan.sh -v -i -c -g /root/etc.git /etc   # create GIT_DIR outside WORK_TREE
+    # confcan.sh -v -c /root/etc.git              # auto-detect WORK_TREE from GIT_DIR
 
 
 ## System requirements and settings

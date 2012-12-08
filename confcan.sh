@@ -13,7 +13,7 @@ GIT=git
 ################################################################################
 usage () {
 	cat <<-EOT
-		Usage: ${0##*/} [OPTION...] <git-repository>
+		Usage: ${0##*/} [OPTION...] <git-repository | git-dir>
 		
 		Options:
 		    -t <timeout>      (Default: $TIMEOUT)
@@ -29,6 +29,8 @@ usage () {
 		        The base directory must exist.
 		    -c
 		        Stage and commit all changes before monitoring.
+		    -g <git-dir>     (Default: auto-detect)
+		        Override \$GIT_DIR.
 		    -e <events>       (Default: $INW_EVENTS)
 		        Comma separated list of events 'inotifywait' should listen to.
 		        See man page of 'inotifywait' for available events.
@@ -116,7 +118,7 @@ declare -i VERBOSITY=0
 # invoked without any arguments -> print usage to stdout and exit with success
 [[ $# == 0 ]] && { usage; exit 0; }
 
-while getopts ":t:w:n:ice:vh" opt; do
+while getopts ":t:w:n:icg:e:vh" opt; do
 	case $opt in
 	t) # timeout in seconds for timeout task
 		TIMEOUT=$OPTARG
@@ -132,6 +134,9 @@ while getopts ":t:w:n:ice:vh" opt; do
 		;;
 	c) # stage and commit on start
 		GIT_INITCOMMIT=true
+		;;
+	g) # override git-directory
+		GIT_DIR_OVERRIDE=$OPTARG
 		;;
 	e) # events inotifywait should listen to
 		INW_EVENTS=$OPTARG
@@ -163,40 +168,60 @@ shift $((OPTIND - 1))
 [[ $# == 1 ]] || { usage >&2; exit 1; }
 
 ################################################################################
-# determine canonical path of repository, as inotifywait seems not to deal with symlinks
-REPO_DIR=$(readlink -f "$1") || cerrexit "Error: Base directory does not exist."
+# determine and export GIT_WORK_TREE and GIT_DIR
 
-if [[ -z "${GIT_INIT-}" ]]; then
-	# sanity check: is this a git repository?
-	[[ -d "$REPO_DIR/.git" ]] || cerrexit "Error: Directory '$REPO_DIR' is not a Git repository."
-else
-	# initialize Git repository if requested by option '-i'
-	cinfo "Initializing Git repository '$REPO_DIR'."
-	$GIT init "$REPO_DIR" &>/dev/null || cerrexit "Error: Could not initialize Git repository '$REPO_DIR'."
+GIT_DIR=${GIT_DIR_OVERRIDE-$1}
+
+if [[ -n "${GIT_INIT-}" ]]; then
+	GIT_WORK_TREE=$1
+	GIT_DIR=${GIT_DIR_OVERRIDE-"$1/.git"}
 	
+	# initialize Git repository
+	cinfo "Initializing Git repository '$GIT_DIR'."
+	$GIT --git-dir "$GIT_DIR" --work-tree "$GIT_WORK_TREE" init "$GIT_WORK_TREE" &>/dev/null || cerrexit "Error: Could not initialize Git repository."
+	
+	# create watch directories
 	if (( ${#GIT_ADD_DIRS[@]} > 0 )); then
 		for d in "${GIT_ADD_DIRS[@]}"; do
-			d="$REPO_DIR/$d"
+			d="$GIT_WORK_TREE/$d"
 			if [[ ! -d "$d" ]]; then
 				cinfo "Creating directory '$d'."
 				mkdir -p "$d" || cerrexit "Error: Could not create directory '$d'."
 			fi
 		done
 	fi
+else
+	[[ -d "$GIT_DIR" ]] || cerrexit "Error: Directory '$GIT_DIR' does not exist."
+
+	if $GIT rev-parse --resolve-git-dir "$GIT_DIR" &>/dev/null; then
+		if [[ -z "${GIT_DIR_OVERRIDE-}" ]]; then
+			# determine work-tree
+			GIT_WORK_TREE=$(cd "$GIT_DIR" && $GIT rev-parse --show-toplevel 2>/dev/null) || cerrexit "Error: No GIT_WORK_TREE found."
+		else
+			GIT_WORK_TREE=$1
+		fi
+	else
+		GIT_WORK_TREE=$1
+		GIT_DIR="$1/$(cd "$1" && $GIT rev-parse --git-dir 2>/dev/null)" || cerrexit "Error: No GIT_DIR found."
+	fi
 fi
 
-# chdir into repository, as git used to operate within its repository
-cd "$REPO_DIR" || cerrexit "Error: Cannot change into repository directory."
+export GIT_WORK_TREE=$(readlink -f "$GIT_WORK_TREE")
+export GIT_DIR=$(readlink -f "$GIT_DIR")
 
+cinfo "GIT_WORK_TREE=$GIT_WORK_TREE"
+cinfo "GIT_DIR=$GIT_DIR"
+
+################################################################################
 
 # selective directory/file watches
 if (( ${#GIT_ADD_DIRS[@]} == 0 )); then
 	GIT_ADD_DIRS=( "." )	# whole repository as default
 fi
 
-declare -a INW_DIRS=( "@$(readlink -f "${REPO_DIR}/.git")" )   # init with excluded .git directory
+declare -a INW_DIRS=( "@$GIT_DIR" )   # init with excluded git-dir
 for d in "${GIT_ADD_DIRS[@]}"; do
-	d="$REPO_DIR/$d"
+	d="$GIT_WORK_TREE/$d"
 	[[ -d "$d" ]] || cerrexit "Error: Directory '$d' does not exist."
 	INW_DIRS+=( "$(readlink -f "$d")" )
 done
@@ -204,7 +229,7 @@ done
 # excluded directory/file watches
 if (( ${#NOWATCH_DIRS[@]} > 0 )); then
 	for d in "${NOWATCH_DIRS[@]}"; do
-		d="$REPO_DIR/$d"
+		d="$GIT_WORK_TREE/$d"
 		INW_DIRS+=( "@$(readlink -f "$d")" )
 	done
 fi
@@ -230,7 +255,7 @@ trap "usr_timeout" SIGUSR1
 while read -r line; do
 	# new inotify event occured
 	((++EVENT_NUM))
-	cinfo "INOTIFY $(printf '%05d' $EVENT_NUM): ${line/$REPO_DIR/}"
+	cinfo "INOTIFY $(printf '%05d' $EVENT_NUM): ${line/$GIT_WORK_TREE/}"
 	
 	# defer action and restart timeout if timeout task is already runnning
 	timeout_task_stop $TIMEOUT_PID
