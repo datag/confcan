@@ -14,25 +14,24 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-    Usage: confcan.sh [OPTION...] <git-repository>
-    
-    Options:
-            -t <timeout>
-                Timeout in seconds before action is triggered (Default: 5)
-            -a <directory>
-                Directory (relative) watched by inotifywait and provided to 'git add'
-                (can be specified multiple times; Default: .)
-            -i
-                Initialize Git repository and creates directories specified by '-a'
-                (base directory must exist)
-            -c
-                Stage and commit all changes before monitoring
-            -e
-                Events inotifywait should listen to
-                See man page of 'inotifywait' for available events
-                (Default: create,close_write,moved_to,move_self,delete)
-            -v
-                Be verbose (given multiple times increases verbosity level)
+	Usage: confcan.sh [OPTION...] <git-repository>
+
+	Options:
+		-t <timeout>      (Default: 5)
+		    Timeout in seconds before action is triggered.
+		-a <directory>    (Default: .)
+		    Directory (relative) watched by inotifywait and provided to 'git add'.
+		    This option can be specified multiple times.
+		-i
+		    Initialize Git repository and creates directories specified by '-a'.
+		    The base directory must exist.
+		-c
+		    Stage and commit all changes before monitoring.
+		-e <events>       (Default: create,close_write,moved_to,move_self,delete)
+		    Comma separated list of events 'inotifywait' should listen to.
+		    See man page of 'inotifywait' for available events.
+		-v
+		    Be verbose. Verbosity level increases when specified multiple times.
 
 
 ## Examples

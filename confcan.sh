@@ -17,22 +17,21 @@ usage () {
 		Usage: ${0##*/} [OPTION...] <git-repository>
 		
 		Options:
-		    -t <timeout>
-		        Timeout in seconds before action is triggered (Default: 5)
-		    -a <directory>
-		        Directory (relative) watched by inotifywait and provided to 'git add'
-		        (can be specified multiple times; Default: .)
+		    -t <timeout>      (Default: $TIMEOUT)
+		        Timeout in seconds before action is triggered.
+		    -a <directory>    (Default: .)
+		        Directory (relative) watched by inotifywait and provided to 'git add'.
+		        This option can be specified multiple times.
 		    -i
-		        Initialize Git repository and creates directories specified by '-a'
-		        (base directory must exist)
+		        Initialize Git repository and creates directories specified by '-a'.
+		        The base directory must exist.
 		    -c
-		        Stage and commit all changes before monitoring
-		    -e
-		        Events inotifywait should listen to
-		        See man page of 'inotifywait' for available events
-		        (Default: create,close_write,moved_to,move_self,delete)
+		        Stage and commit all changes before monitoring.
+		    -e <events>       (Default: $INW_EVENTS)
+		        Comma separated list of events 'inotifywait' should listen to.
+		        See man page of 'inotifywait' for available events.
 		    -v
-		        Be verbose (given multiple times increases verbosity level)
+		        Be verbose. Verbosity level increases when specified multiple times.
 	EOT
 }
 
