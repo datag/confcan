@@ -107,20 +107,16 @@ declare -i VERBOSITY=0
 
 while getopts ":vt:a:ih" opt; do
 	case $opt in
-	# timeout in seconds for timeout task
-	t)
+	t) # timeout in seconds for timeout task
 		TIMEOUT=$OPTARG
 		;;
-	# directories to be watched by inotify and provided to 'git add'
-	a)
+	a) # directories to be watched by inotify and provided to 'git add'
 		GIT_ADD_DIRS+=( "$OPTARG" )
 		;;
-	# initialize Git repository
-	i)
+	i) # initialize Git repository
 		GIT_INIT=1
 		;;
-	# be verbose; each -v increases the verbosity level
-	v)
+	v) # be verbose; each -v increases the verbosity level
 		VERBOSITY=$((VERBOSITY + 1))
 		;;
 	h)
