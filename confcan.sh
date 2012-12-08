@@ -5,7 +5,7 @@
 # Copyright 2012  Dominik D. Geyer <dominik.geyer@gmail.com>
 # License: GPLv3 (see file LICENSE)
 ################################################################################
-set -e
+set -o errexit -o nounset
 
 INW=inotifywait
 INW_EVENTS="create,close_write,moved_to,move_self,delete"
@@ -91,7 +91,7 @@ timeout_task () {
 # Kills timeout task and waits for its completion
 # @param integer PID of timeout process
 timeout_task_stop () {
-	local tpid=$1
+	local tpid=${1-}
 	
 	if [[ -n "$tpid" ]] && kill -0 $tpid &>/dev/null; then
 		# kill it and wait for completion
@@ -104,8 +104,6 @@ timeout_task_stop () {
 
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
-declare GIT_INIT
-declare GIT_INITCOMMIT
 declare -i VERBOSITY=0
 
 while getopts ":vt:a:ich" opt; do
@@ -117,10 +115,10 @@ while getopts ":vt:a:ich" opt; do
 		GIT_ADD_DIRS+=( "$OPTARG" )
 		;;
 	i) # initialize Git repository
-		GIT_INIT=1
+		GIT_INIT=true
 		;;
 	c) # stage and commit on start
-		GIT_INITCOMMIT=1
+		GIT_INITCOMMIT=true
 		;;
 	v) # be verbose; each -v increases the verbosity level
 		VERBOSITY=$((VERBOSITY + 1))
@@ -154,7 +152,7 @@ fi
 # determine canonical path of repository, as inotifywait seems not to deal with symlinks
 REPO_DIR=$(readlink -f "$1") || { cmsg "Error: Base directory does not exist."; exit 1; }
 
-if [[ -z "$GIT_INIT" ]]; then
+if [[ -z "${GIT_INIT-}" ]]; then
 	# sanity check: is this a git repository?
 	[[ -d "$REPO_DIR/.git" ]] || { cmsg "Error: Directory '$REPO_DIR' is not a Git repository."; exit 1; }
 else
@@ -162,14 +160,16 @@ else
 	cinfo "Initializing Git repository '$REPO_DIR'."
 	$GIT init "$REPO_DIR" &>/dev/null || { cmsg "Error: Could not initialize Git repository '$REPO_DIR'."; exit 1; }
 	
-	for d in "${GIT_ADD_DIRS[@]}"; do
-		d="$REPO_DIR/$d"
-		if [[ ! -d "$d" ]]; then
-			cinfo "Creating directory '$d'."
-			mkdir -p "$d" || { cmsg "Error: Could not create directory '$d'."; exit 1; }
-		fi
-	done
-	unset d
+	if (( ${#GIT_ADD_DIRS[@]} > 0 )); then
+		for d in "${GIT_ADD_DIRS[@]}"; do
+			d="$REPO_DIR/$d"
+			if [[ ! -d "$d" ]]; then
+				cinfo "Creating directory '$d'."
+				mkdir -p "$d" || { cmsg "Error: Could not create directory '$d'."; exit 1; }
+			fi
+		done
+		unset d
+	fi
 fi
 
 # chdir into repository, as git used to operate within its repository
@@ -190,13 +190,15 @@ done
 unset d
 
 # stage and commit all changes before monitoring?
-if [[ -n "$GIT_INITCOMMIT" ]]; then
+if [[ -n "${GIT_INITCOMMIT-}" ]]; then
+	cinfo "Initially stage and commit."
 	git_trigger
 fi
 
 ################################################################################
 
-TIMEOUT_PID=	# timeout process's PID
+declare TIMEOUT_PID=	# timeout process's PID
+declare -i evcount=0
 
 # install signal handlers
 trap "cleanup" EXIT
