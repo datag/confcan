@@ -14,29 +14,29 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-Usage: confcan.sh [OPTION...] <git-repository>
+	Usage: confcan.sh [OPTION...] <git-repository>
 
-Options:
-    -t <timeout>      (Default: 5)
-        Timeout in seconds before action is triggered.
-    -w <directory/file>    (Default: .)
-        Directory/File (relative) to be watched and provided to 'git add'.
-        This option can be specified multiple times.
-    -n <directory/file>    (Internal: $GIT_REPO/.git)
-        Directory/File (relative) to exclude from watching.
-        This option can be specified multiple times.
-    -i
-        Initialize Git repository and creates directories specified by '-a'.
-        The base directory must exist.
-    -c
-        Stage and commit all changes before monitoring.
-    -e <events>       (Default: create,close_write,moved_to,move_self,delete)
-        Comma separated list of events 'inotifywait' should listen to.
-        See man page of 'inotifywait' for available events.
-    -v
-        Be verbose. Verbosity level increases when specified multiple times.
-    -h
-        Print this usage message and exit.
+	Options:
+		-t <timeout>      (Default: 5)
+		    Timeout in seconds before action is triggered.
+		-w <directory/file>    (Default: .)
+		    Directory/File (relative) to be watched and provided to 'git add'.
+		    This option can be specified multiple times.
+		-n <directory/file>    (Internal: $GIT_REPO/.git)
+		    Directory/File (relative) to exclude from watching.
+		    This option can be specified multiple times.
+		-i
+		    Initialize Git repository and creates directories specified by '-a'.
+		    The base directory must exist.
+		-c
+		    Stage and commit all changes before monitoring.
+		-e <events>       (Default: create,close_write,moved_to,move_self,delete)
+		    Comma separated list of events 'inotifywait' should listen to.
+		    See man page of 'inotifywait' for available events.
+		-v
+		    Be verbose. Verbosity level increases when specified multiple times.
+		-h
+		    Print this usage message and exit.
 
 
 ## Examples
