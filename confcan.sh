@@ -11,7 +11,6 @@ INW=inotifywait
 GIT=git
 
 ################################################################################
-
 usage () {
 	cat <<-EOT
 		Usage: ${0##*/} [OPTION...] <git-repository>
@@ -74,7 +73,7 @@ cleanup () {
 
 # Signal handler for USR1 which triggers an action
 usr_timeout () {
-	git_trigger || cmsg "Warning: Not all git actions were successful."
+	git_trigger || cerrexit "Error: At least one git action failed."
 	
 	return 0
 }
@@ -105,7 +104,6 @@ timeout_task_stop () {
 }
 
 ################################################################################
-
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
 declare INW_EVENTS="create,close_write,moved_to,move_self,delete"
@@ -157,7 +155,7 @@ shift $((OPTIND - 1))
 # exact one argument for repository is required
 [[ $# == 1 ]] || { usage >&2; exit 1; }
 
-
+################################################################################
 # determine canonical path of repository, as inotifywait seems not to deal with symlinks
 REPO_DIR=$(readlink -f "$1") || cerrexit "Error: Base directory does not exist."
 
@@ -196,14 +194,14 @@ for d in "${GIT_ADD_DIRS[@]}"; do
 	INW_DIRS+=( "$(readlink -f "$d")" )
 done
 
+################################################################################
 # stage and commit all changes before monitoring?
 if [[ -n "${GIT_INITCOMMIT-}" ]]; then
 	cinfo "Initially stage and commit."
-	git_trigger
+	git_trigger || cerrexit "Error: Requested initial git commit failed."
 fi
 
 ################################################################################
-
 declare TIMEOUT_PID=	# timeout process's PID
 declare -i EVENT_NUM=0
 
