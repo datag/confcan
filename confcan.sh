@@ -18,8 +18,11 @@ usage () {
 		Options:
 		    -t <timeout>      (Default: $TIMEOUT)
 		        Timeout in seconds before action is triggered.
-		    -a <directory>    (Default: .)
-		        Directory (relative) watched by inotifywait and provided to 'git add'.
+		    -w <directory/file>    (Default: .)
+		        Directory/File (relative) to be watched and provided to 'git add'.
+		        This option can be specified multiple times.
+		    -n <directory/file>    (Internal: \$GIT_REPO/.git)
+		        Directory/File (relative) to exclude from watching.
 		        This option can be specified multiple times.
 		    -i
 		        Initialize Git repository and creates directories specified by '-a'.
@@ -106,19 +109,23 @@ timeout_task_stop () {
 ################################################################################
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
+declare -a NOWATCH_DIRS
 declare INW_EVENTS="create,close_write,moved_to,move_self,delete"
 declare -i VERBOSITY=0
 
 # invoked without any arguments -> print usage to stdout and exit with success
 [[ $# == 0 ]] && { usage; exit 0; }
 
-while getopts ":t:a:ice:vh" opt; do
+while getopts ":t:w:n:ice:vh" opt; do
 	case $opt in
 	t) # timeout in seconds for timeout task
 		TIMEOUT=$OPTARG
 		;;
-	a) # directories to be watched by inotify and provided to 'git add'
+	w) # directories to be watched by inotify and provided to 'git add'
 		GIT_ADD_DIRS+=( "$OPTARG" )
+		;;
+	n) # directories to be excluded from watch list
+		NOWATCH_DIRS+=( "$OPTARG" )
 		;;
 	i) # initialize Git repository
 		GIT_INIT=true
@@ -182,17 +189,27 @@ fi
 cd "$REPO_DIR" || cerrexit "Error: Cannot change into repository directory."
 
 
-# selective directory watches
+# selective directory/file watches
 if (( ${#GIT_ADD_DIRS[@]} == 0 )); then
 	GIT_ADD_DIRS=( "." )	# whole repository as default
 fi
 
-declare -a INW_DIRS
+declare -a INW_DIRS=( "@$(readlink -f "${REPO_DIR}/.git")" )   # init with excluded .git directory
 for d in "${GIT_ADD_DIRS[@]}"; do
 	d="$REPO_DIR/$d"
 	[[ -d "$d" ]] || cerrexit "Error: Directory '$d' does not exist."
 	INW_DIRS+=( "$(readlink -f "$d")" )
 done
+
+# excluded directory/file watches
+if (( ${#NOWATCH_DIRS[@]} > 0 )); then
+	for d in "${NOWATCH_DIRS[@]}"; do
+		d="$REPO_DIR/$d"
+		INW_DIRS+=( "@$(readlink -f "$d")" )
+	done
+fi
+
+cinfo "Directories/files to be watched/not watched: ${INW_DIRS[@]}"
 
 ################################################################################
 # stage and commit all changes before monitoring?
@@ -221,7 +238,7 @@ while read -r line; do
 	# run timeout task as background process and get its PID
 	timeout_task $$ $TIMEOUT &
 	TIMEOUT_PID=$!
-done < <($INW -q -m -r -e $INW_EVENTS "${INW_DIRS[@]}" "@${REPO_DIR}/.git")
+done < <($INW -q -m -r -e $INW_EVENTS "${INW_DIRS[@]}")
 
 # if we reach this point, inotifywait failed watching or ended unexpectedly
 cmsg "Error: notifywait monitoring failed."

@@ -14,26 +14,29 @@ Please note that with this approach **not every** file change may be versioned.
 
 ## General usage
 
-	Usage: confcan.sh [OPTION...] <git-repository>
+Usage: confcan.sh [OPTION...] <git-repository>
 
-	Options:
-		-t <timeout>      (Default: 5)
-		    Timeout in seconds before action is triggered.
-		-a <directory>    (Default: .)
-		    Directory (relative) watched by inotifywait and provided to 'git add'.
-		    This option can be specified multiple times.
-		-i
-		    Initialize Git repository and creates directories specified by '-a'.
-		    The base directory must exist.
-		-c
-		    Stage and commit all changes before monitoring.
-		-e <events>       (Default: create,close_write,moved_to,move_self,delete)
-		    Comma separated list of events 'inotifywait' should listen to.
-		    See man page of 'inotifywait' for available events.
-		-v
-		    Be verbose. Verbosity level increases when specified multiple times.
-		-h
-		    Print this usage message and exit.
+Options:
+    -t <timeout>      (Default: 5)
+        Timeout in seconds before action is triggered.
+    -w <directory/file>    (Default: .)
+        Directory/File (relative) to be watched and provided to 'git add'.
+        This option can be specified multiple times.
+    -n <directory/file>    (Internal: $GIT_REPO/.git)
+        Directory/File (relative) to exclude from watching.
+        This option can be specified multiple times.
+    -i
+        Initialize Git repository and creates directories specified by '-a'.
+        The base directory must exist.
+    -c
+        Stage and commit all changes before monitoring.
+    -e <events>       (Default: create,close_write,moved_to,move_self,delete)
+        Comma separated list of events 'inotifywait' should listen to.
+        See man page of 'inotifywait' for available events.
+    -v
+        Be verbose. Verbosity level increases when specified multiple times.
+    -h
+        Print this usage message and exit.
 
 
 ## Examples
@@ -51,13 +54,13 @@ Please note that with this approach **not every** file change may be versioned.
 
 ### Selective directory monitoring
 
-    $ confcan.sh -v -a 'watch_me' -a 'another dir' ~/my_repo &
+    $ confcan.sh -v -w 'watch_me' -w 'another dir' ~/my_repo &
     $ touch ~/my_repo/foo           # nothing happens because there is no watch
     $ touch ~/my_repo/watch_me/bar  # change is detected and will be committed
 
 ### Initialize Git repository at `/` and stage, commit and watch `/etc` and `/var/lib/portage`
 
-    # confcan.sh -v -i -c -a etc -a var/lib/portage /
+    # confcan.sh -v -i -c -w etc -w var/lib/portage /
 
 
 ## System requirements and settings
@@ -90,19 +93,21 @@ See the `LICENSE` file in root of the repository.
 ## Known bugs
 
 * Copying another git-repository into watched repository might give strange effects (submodule; circular locking?)
+* Directory/file must exist to be included in watch-list
+* If directory/file is specified **not** to be watched and it doesn't exist, it will be removed from ignore-list
+* If a watched directory/file is removed it will be removed from the watch-list and no longer be monitored, even when recreated
 
 
 ## TODO
 
 * General:
+  * Configurable commit message
   * Logging support
   * Config file support
 * inotifywait-specific:
   * Use custom output format of inotifywait
   * Configurable pattern for ignoring files/directories
-  * Use $INW_IGNORE variable
 * Git-specific:
-  * Implement option for initial git commit
   * Metadata (file attribute) logging support
   * Auto-tagging by writing "magic" file (e.g. `touch TAG_config-test-1`)
 
