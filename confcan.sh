@@ -198,7 +198,7 @@ fi
 ################################################################################
 
 declare TIMEOUT_PID=	# timeout process's PID
-declare -i evcount=0
+declare -i EVENT_NUM=0
 
 # install signal handlers
 trap "cleanup" EXIT
@@ -207,8 +207,8 @@ trap "usr_timeout" SIGUSR1
 # for each requested inotify event
 while read -r line; do
 	# new inotify event occured
-	((++evcount))
-	cinfo "INOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/}"
+	((++EVENT_NUM))
+	cinfo "INOTIFY $(printf '%05d' $EVENT_NUM): ${line/$REPO_DIR/}"
 	
 	# defer action and restart timeout if timeout task is already runnning
 	timeout_task_stop $TIMEOUT_PID
