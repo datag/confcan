@@ -32,6 +32,8 @@ Please note that with this approach **not every** file change may be versioned.
 		    See man page of 'inotifywait' for available events.
 		-v
 		    Be verbose. Verbosity level increases when specified multiple times.
+		-h
+		    Print this usage message and exit.
 
 
 ## Examples

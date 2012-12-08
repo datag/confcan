@@ -32,6 +32,8 @@ usage () {
 		        See man page of 'inotifywait' for available events.
 		    -v
 		        Be verbose. Verbosity level increases when specified multiple times.
+		    -h
+		        Print this usage message and exit.
 	EOT
 }
 
