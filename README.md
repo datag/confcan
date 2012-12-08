@@ -1,8 +1,8 @@
 # ConfCan
 
-ConfCan is a simple script used for automatically triggering an action on file 
-changes occuring in a directory. The directory is monitored by the `inotify-tools` 
-program `inotifywait` and the action is usually a commit into a Git-repository.
+ConfCan is a simple script used for automatically committing to a Git repository
+on file changes occuring in a directory. The directory is monitored by the
+`inotify-tools` program `inotifywait`.
 
 Each occured inotify event causes a timeout task to start, which will finally 
 trigger the configured action. While the timeout task is running, subsequent 
@@ -49,19 +49,36 @@ Please note that with this approach **not every** file change may be versioned.
     $ touch ~/my_repo/watch_me/bar  # change is detected and will be committed
 
 
-## Known bugs
+## System requirements and settings
 
-* Copying another git-repository into watched repository might give strange effects (submodule; circular locking?)
+### Required software
 
+* [Git](http://git-scm.com/)
+* [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki)
 
-## Thanks to
+### Settings
 
-* [Nevik Rehnel's gitwatch project](https://github.com/n3v1k/gitwatch) which gave me some inspiration.
+See the [inotify man page](http://www.kernel.org/doc/man-pages/online/pages/man7/inotify.7.html) for complete reference.
+
+#### Increase the amount of allowed watches, e.g. to 32768:
+
+    # echo 32768 >/proc/sys/fs/inotify/max_user_watches
 
 
 ## License
 
 See the `LICENSE` file in root of the repository.
+
+
+## Thanks to
+
+* [Question "Making git auto-commit" on stackoverflow](http://stackoverflow.com/questions/420143/making-git-auto-commit) for the idea
+* [Nevik Rehnel's gitwatch project](https://github.com/n3v1k/gitwatch) for inspiration
+
+
+## Known bugs
+
+* Copying another git-repository into watched repository might give strange effects (submodule; circular locking?)
 
 
 ## TODO
@@ -74,6 +91,7 @@ See the `LICENSE` file in root of the repository.
   * Configurable pattern for ignoring files/directories
   * Use $INW_IGNORE variable
 * Git-specific:
+  * Implement option for initial git commit
   * Metadata (file attribute) logging support
   * Auto-tagging by writing "magic" file (e.g. `touch TAG_config-test-1`)
 
