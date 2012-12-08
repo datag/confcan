@@ -43,7 +43,7 @@ cmsg () { echo "$@" >&2; }
 cerrexit () { echo "$@" >&2; exit 1; }
 
 # Print informational message out to stderr (depending on verbosity level)
-cinfo () { (( VERBOSITY > 0 )) && echo "$@" >&2; }
+cinfo () { (( VERBOSITY > 0 )) && echo "$@" >&2 || return 0; }
 
 # Git actions
 git_trigger () {
