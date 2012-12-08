@@ -36,22 +36,15 @@ usage () {
 }
 
 # Print message out to stderr
-cmsg () {
-	echo "$@" >&2
-}
+cmsg () { echo "$@" >&2; }
 
 # Print error message out to stderr and exit
-cerrexit () {
-	echo "$@" >&2
-	exit 1
-}
+cerrexit () { echo "$@" >&2; exit 1; }
 
 # Print informational message out to stderr (depending on verbosity level)
-cinfo () {
-	(( VERBOSITY < 1 )) && return
-	echo "$@" >&2
-}
+cinfo () { (( VERBOSITY > 0 )) && echo "$@" >&2; }
 
+# Git actions
 git_trigger () {
 	# stage all changed/new/deleted files
 	if ! $GIT add --all -- "${GIT_ADD_DIRS[@]}"; then
