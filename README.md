@@ -25,13 +25,15 @@ Please note that with this approach **not every** file change may be versioned.
             -i
                 Initialize Git repository and creates directories specified by '-a'
                 (base directory must exist)
+            -c
+                Stage and commit all changes before monitoring
             -v
                 Be verbose (given multiple times increases verbosity level)
 
 
 ## Examples
 
-### Record both user and system changes to system configuration (directory /etc)
+### Record both user and system changes to system configuration (directory `/etc`)
 
     # cd /etc     # chdir into /etc
     # git init    # initialize empty git repository
@@ -47,6 +49,10 @@ Please note that with this approach **not every** file change may be versioned.
     $ confcan.sh -v -a 'watch_me' -a 'another dir' ~/my_repo &
     $ touch ~/my_repo/foo           # nothing happens because there is no watch
     $ touch ~/my_repo/watch_me/bar  # change is detected and will be committed
+
+### Initialize Git repository at `/` and stage, commit and watch `/etc` and `/var/lib/portage`
+
+    # confcan.sh -v -i -c -a etc -a var/lib/portage /
 
 
 ## System requirements and settings

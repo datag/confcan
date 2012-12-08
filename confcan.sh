@@ -27,6 +27,8 @@ usage () {
 		    -i
 		        Initialize Git repository and creates directories specified by '-a'
 		        (base directory must exist)
+		    -c
+		        Stage and commit all changes before monitoring
 		    -v
 		        Be verbose (given multiple times increases verbosity level)
 	EOT
@@ -103,9 +105,10 @@ timeout_task_stop () {
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
 declare GIT_INIT
+declare GIT_INITCOMMIT
 declare -i VERBOSITY=0
 
-while getopts ":vt:a:ih" opt; do
+while getopts ":vt:a:ich" opt; do
 	case $opt in
 	t) # timeout in seconds for timeout task
 		TIMEOUT=$OPTARG
@@ -115,6 +118,9 @@ while getopts ":vt:a:ih" opt; do
 		;;
 	i) # initialize Git repository
 		GIT_INIT=1
+		;;
+	c) # stage and commit on start
+		GIT_INITCOMMIT=1
 		;;
 	v) # be verbose; each -v increases the verbosity level
 		VERBOSITY=$((VERBOSITY + 1))
@@ -182,6 +188,11 @@ for d in "${GIT_ADD_DIRS[@]}"; do
 	INW_DIRS+=( "$(readlink -f "$d")" )
 done
 unset d
+
+# stage and commit all changes before monitoring?
+if [[ -n "$GIT_INITCOMMIT" ]]; then
+	git_trigger
+fi
 
 ################################################################################
 
