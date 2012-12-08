@@ -199,7 +199,7 @@ trap "usr_timeout" SIGUSR1
 while read -r line; do
 	# new inotify event occured
 	((++evcount))
-	cinfo "INOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/GIT_REPO}"
+	cinfo "INOTIFY $(printf '%05d' $evcount): ${line/$REPO_DIR/}"
 	
 	# defer action and restart timeout if timeout task is already runnning
 	timeout_task_stop $TIMEOUT_PID
