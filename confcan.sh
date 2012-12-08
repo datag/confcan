@@ -238,7 +238,7 @@ while read -r line; do
 	# run timeout task as background process and get its PID
 	timeout_task $$ $TIMEOUT &
 	TIMEOUT_PID=$!
-done < <($INW -q -m -r -e $INW_EVENTS "${INW_DIRS[@]}")
+done < <($INW -q -m -r -e $INW_EVENTS --exclude '/\.git/.*\.lock$' "${INW_DIRS[@]}")
 
 # if we reach this point, inotifywait failed watching or ended unexpectedly
 cmsg "Error: notifywait monitoring failed."
