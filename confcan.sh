@@ -149,13 +149,11 @@ while getopts ":t:a:ice:vh" opt; do
 	esac
 done
 
-shift $((OPTIND-1))
+# shift out options
+shift $((OPTIND - 1))
 
-# is required argument for repository missing?
-if [[ $# != 1 ]]; then
-    usage >&2
-    exit 1
-fi
+# exact one argument for repository is required
+[[ $# == 1 ]] || { usage >&2; exit 1; }
 
 
 # determine canonical path of repository, as inotifywait seems not to deal with symlinks
@@ -228,4 +226,3 @@ done < <($INW -q -m -r -e $INW_EVENTS "${INW_DIRS[@]}" "@${REPO_DIR}/.git")
 # if we reach this point, inotifywait failed watching or ended unexpectedly
 cmsg "Error: notifywait monitoring failed."
 exit 1
-
