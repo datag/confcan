@@ -112,7 +112,7 @@ timeout_task_stop () {
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
 declare -a NOWATCH_DIRS
-declare INW_EVENTS="create,close_write,moved_to,move_self,delete"
+declare INW_EVENTS="create,modify,close_write,moved_to,move_self,delete"
 declare -i VERBOSITY=0
 
 # invoked without any arguments -> print usage to stdout and exit with success
