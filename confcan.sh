@@ -8,8 +8,6 @@
 set -o errexit -o nounset
 
 INW=inotifywait
-INW_EVENTS="create,close_write,moved_to,move_self,delete"
-
 GIT=git
 
 ################################################################################
@@ -29,6 +27,10 @@ usage () {
 		        (base directory must exist)
 		    -c
 		        Stage and commit all changes before monitoring
+		    -e
+		        Events inotifywait should listen to
+		        See man page of 'inotifywait' for available events
+		        (Default: create,close_write,moved_to,move_self,delete)
 		    -v
 		        Be verbose (given multiple times increases verbosity level)
 	EOT
@@ -104,9 +106,10 @@ timeout_task_stop () {
 
 declare -i TIMEOUT=5
 declare -a GIT_ADD_DIRS
+declare INW_EVENTS="create,close_write,moved_to,move_self,delete"
 declare -i VERBOSITY=0
 
-while getopts ":vt:a:ich" opt; do
+while getopts ":t:a:ice:vh" opt; do
 	case $opt in
 	t) # timeout in seconds for timeout task
 		TIMEOUT=$OPTARG
@@ -119,6 +122,9 @@ while getopts ":vt:a:ich" opt; do
 		;;
 	c) # stage and commit on start
 		GIT_INITCOMMIT=true
+		;;
+	e) # events inotifywait should listen to
+		INW_EVENTS=$OPTARG
 		;;
 	v) # be verbose; each -v increases the verbosity level
 		VERBOSITY=$((VERBOSITY + 1))

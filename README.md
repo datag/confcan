@@ -27,6 +27,10 @@ Please note that with this approach **not every** file change may be versioned.
                 (base directory must exist)
             -c
                 Stage and commit all changes before monitoring
+            -e
+                Events inotifywait should listen to
+                See man page of 'inotifywait' for available events
+                (Default: create,close_write,moved_to,move_self,delete)
             -v
                 Be verbose (given multiple times increases verbosity level)
 
